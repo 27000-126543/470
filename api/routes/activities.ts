@@ -2,12 +2,35 @@ import { Router, type Request, type Response } from 'express'
 import { v4 } from 'uuid'
 import { readDB, writeDB } from '../db.js'
 
-const router = Router()
+const normalizeParticipants = (participants: any[]): any[] => {
+  return participants.map((p) => {
+    if (typeof p === 'string') {
+      return {
+        memberId: p,
+        bringFamily: false,
+        familyCount: 0,
+        remark: '',
+        phone: '',
+      }
+    }
+    return {
+      memberId: p.memberId,
+      bringFamily: p.bringFamily || false,
+      familyCount: p.familyCount || 0,
+      remark: p.remark || '',
+      phone: p.phone || '',
+    }
+  })
+}
 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const db = readDB()
-    res.json({ success: true, data: db.activities })
+    const activities = db.activities.map((a: any) => ({
+      ...a,
+      participants: normalizeParticipants(a.participants || []),
+    }))
+    res.json({ success: true, data: activities })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to get activities' })
   }
@@ -44,7 +67,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
 router.post('/:id/join', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { memberId } = req.body
+    const { memberId, bringFamily, familyCount, remark, phone } = req.body
     if (!memberId) {
       res.status(400).json({ success: false, error: 'memberId is required' })
       return
@@ -57,12 +80,34 @@ router.post('/:id/join', async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    if (!activity.participants.includes(memberId)) {
-      activity.participants.push(memberId)
-      writeDB(db)
+    activity.participants = normalizeParticipants(activity.participants || [])
+
+    const existingIndex = activity.participants.findIndex((p: any) => p.memberId === memberId)
+    if (existingIndex >= 0) {
+      activity.participants[existingIndex] = {
+        memberId,
+        bringFamily: bringFamily || false,
+        familyCount: familyCount || 0,
+        remark: remark || '',
+        phone: phone || '',
+      }
+    } else {
+      activity.participants.push({
+        memberId,
+        bringFamily: bringFamily || false,
+        familyCount: familyCount || 0,
+        remark: remark || '',
+        phone: phone || '',
+      })
     }
 
-    res.json({ success: true, data: activity })
+    writeDB(db)
+
+    const updatedActivity = {
+      ...activity,
+      participants: normalizeParticipants(activity.participants),
+    }
+    res.json({ success: true, data: updatedActivity })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to join activity' })
   }
