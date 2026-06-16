@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, FileDown, Camera, BookOpen, PartyPopper, Filter, X } from 'lucide-react';
 import useFamilyStore from '@/store/useFamilyStore';
 import ChronicleForm from '@/components/ChronicleForm';
@@ -13,7 +14,9 @@ export default function Chronicle() {
   const { chronicleEntries, members, familyTrees, fetchChronicle, fetchMembers, setChronicleFormOpen, deleteChronicleEntry } = useFamilyStore();
   const timelineRef = useRef<HTMLDivElement>(null);
   const visibleRefs = useRef<Map<string, boolean>>(new Map());
-  const [selectedMember, setSelectedMember] = useState<string>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialMember = searchParams.get('member') || 'all';
+  const [selectedMember, setSelectedMember] = useState<string>(initialMember);
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
@@ -22,6 +25,14 @@ export default function Chronicle() {
     fetchChronicle();
     fetchMembers();
   }, [fetchChronicle, fetchMembers]);
+
+  useEffect(() => {
+    const memberParam = searchParams.get('member');
+    if (memberParam && memberParam !== selectedMember) {
+      setSelectedMember(memberParam);
+      setShowFilters(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -50,7 +61,7 @@ export default function Chronicle() {
     return [...chronicleEntries]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .filter((entry) => {
-        if (selectedMember !== 'all' && entry.createdBy !== selectedMember) return false;
+        if (selectedMember !== 'all' && entry.relatedMemberId !== selectedMember) return false;
         if (selectedYear !== 'all') {
           const entryYear = new Date(entry.date).getFullYear().toString();
           if (entryYear !== selectedYear) return false;
@@ -309,6 +320,11 @@ export default function Chronicle() {
                             <div className={`flex items-center gap-2 mb-2 ${isLeft ? 'justify-end' : ''}`}>
                               <span className="text-lg">{typeInfo.icon}</span>
                               <h3 className="font-serif font-bold text-brown-700 text-sm">{entry.title}</h3>
+                              {entry.relatedMemberId && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-gold-100 text-gold-600 rounded-full">
+                                  {getMemberName(entry.relatedMemberId)}
+                                </span>
+                              )}
                             </div>
                             {entry.description && (
                               <p className="text-xs text-brown-400 mb-2 line-clamp-3">{entry.description}</p>

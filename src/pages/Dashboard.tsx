@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GitBranch, Calendar, UserPlus, Plus, Camera, BookOpen, Bell, Clock, MapPin, AlertCircle } from 'lucide-react';
+import { Users, GitBranch, Calendar, UserPlus, Plus, Camera, BookOpen, Bell, Clock, MapPin, AlertCircle, ChevronDown, ChevronUp, Phone, User } from 'lucide-react';
 import useFamilyStore, { type ActivityParticipant } from '@/store/useFamilyStore';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { members, activities, birthdayReminders, activityReminders, fetchMembers, fetchActivities, fetchBirthdayReminders, fetchActivityReminders, setMemberFormOpen, setActivityFormOpen, setChronicleFormOpen } = useFamilyStore();
+  const [expandedReminders, setExpandedReminders] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchMembers();
@@ -16,6 +17,20 @@ export default function Dashboard() {
 
   const getTotalParticipants = (participants: ActivityParticipant[]): number => {
     return participants.reduce((total, p) => total + 1 + (p.familyCount || 0), 0);
+  };
+
+  const getMemberName = (memberId: string): string => {
+    const m = members.find((mem) => mem.id === memberId);
+    return m ? m.name : '未知成员';
+  };
+
+  const toggleReminderExpand = (id: string) => {
+    setExpandedReminders((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const generations = new Set(members.map((m) => m.relationType)).size;
@@ -79,6 +94,8 @@ export default function Dashboard() {
           <div className="space-y-3">
             {activityReminders.map((reminder) => {
               const urgency = urgencyConfig[reminder.urgency] || urgencyConfig.soon;
+              const isExpanded = expandedReminders.has(reminder.activityId);
+              const participants = reminder.participants || [];
               return (
                 <div key={reminder.activityId} className={`rounded-xl p-4 border ${urgency.bgCls}`}>
                   <div className="flex items-start justify-between mb-2">
@@ -86,9 +103,17 @@ export default function Dashboard() {
                       <AlertCircle size={16} className={urgency.cls} />
                       <span className="font-medium text-brown-700">{reminder.title}</span>
                     </div>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${urgency.cls} ${reminder.urgency === 'today' ? 'bg-red-100' : reminder.urgency === 'tomorrow' ? 'bg-orange-100' : 'bg-gold-400/10'}`}>
-                      {urgency.text}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${urgency.cls} ${reminder.urgency === 'today' ? 'bg-red-100' : reminder.urgency === 'tomorrow' ? 'bg-orange-100' : 'bg-gold-400/10'}`}>
+                        {urgency.text}
+                      </span>
+                      <button
+                        onClick={() => toggleReminderExpand(reminder.activityId)}
+                        className={`p-0.5 rounded transition-colors ${urgency.cls} hover:bg-white/50`}
+                      >
+                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-brown-500">
                     <span className="flex items-center gap-1">
@@ -104,6 +129,42 @@ export default function Dashboard() {
                       {reminder.participantCount}人报名（含家属共{reminder.totalCount}人）
                     </span>
                   </div>
+
+                  {isExpanded && (
+                    <div className="mt-3 pt-3 border-t border-brown-100/60 space-y-2">
+                      {participants.length === 0 ? (
+                        <p className="text-xs text-brown-300">暂无报名成员</p>
+                      ) : (
+                        participants.map((p: any) => {
+                          const memberName = typeof p === 'string' ? getMemberName(p) : getMemberName(p.memberId);
+                          const bringFamily = typeof p !== 'string' && p.bringFamily;
+                          const familyCount = typeof p !== 'string' ? (p.familyCount || 0) : 0;
+                          const phone = typeof p !== 'string' ? (p.phone || '') : '';
+                          const remark = typeof p !== 'string' ? (p.remark || '') : '';
+                          return (
+                            <div key={typeof p === 'string' ? p : p.memberId} className="bg-white/60 rounded-lg p-2.5 space-y-1">
+                              <div className="flex items-center gap-2 text-sm">
+                                <User size={13} className="text-brown-400" />
+                                <span className="font-medium text-brown-600">{memberName}</span>
+                                {bringFamily && familyCount > 0 && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-gold-100 text-gold-600 rounded-full">携带家属+{familyCount}</span>
+                                )}
+                              </div>
+                              {phone && (
+                                <div className="flex items-center gap-2 text-xs text-brown-500 pl-5">
+                                  <Phone size={11} className="text-brown-300" />
+                                  <span>{phone}</span>
+                                </div>
+                              )}
+                              {remark && (
+                                <div className="text-xs text-brown-400 pl-5 italic">备注：{remark}</div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

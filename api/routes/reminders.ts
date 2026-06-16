@@ -69,7 +69,7 @@ router.get('/birthdays', async (req: Request, res: Response): Promise<void> => {
       lastScan.getMonth() === currentMonth && 
       lastScan.getFullYear() === currentYear
 
-    if (isFirstOfMonth && !hasScannedThisMonth) {
+    if (!lastScan || (isFirstOfMonth && !hasScannedThisMonth)) {
       const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
       const reminders = db.members
@@ -111,7 +111,16 @@ router.get('/birthdays', async (req: Request, res: Response): Promise<void> => {
       writeDB(db)
     }
 
-    const allReminders = [...persisted].sort((a: any, b: any) => a.daysUntil - b.daysUntil)
+    const allReminders = persisted
+      .map((r: any) => {
+        const d = new Date(r.nextBirthday)
+        const dynamicDaysUntil = Math.ceil((d.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
+        return {
+          ...r,
+          daysUntil: dynamicDaysUntil,
+        }
+      })
+      .sort((a: any, b: any) => a.daysUntil - b.daysUntil)
 
     res.json({ success: true, data: allReminders })
   } catch (error) {

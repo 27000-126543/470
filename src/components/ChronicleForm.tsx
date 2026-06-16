@@ -9,11 +9,12 @@ const typeOptions = [
 ];
 
 export default function ChronicleForm() {
-  const { isChronicleFormOpen, setChronicleFormOpen, addChronicleEntry } = useFamilyStore();
+  const { isChronicleFormOpen, setChronicleFormOpen, addChronicleEntry, members } = useFamilyStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [type, setType] = useState<'photo' | 'story' | 'event'>('story');
+  const [relatedMemberId, setRelatedMemberId] = useState<string>('');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -41,12 +42,21 @@ export default function ChronicleForm() {
         if (uploadData.success) mediaUrl = uploadData.data.url;
       } catch {}
     }
-    await addChronicleEntry({ title: title.trim(), description, date, type, mediaUrl, createdBy: 'admin' });
+    await addChronicleEntry({
+      title: title.trim(),
+      description,
+      date,
+      type,
+      mediaUrl,
+      createdBy: 'admin',
+      relatedMemberId: relatedMemberId || undefined,
+    });
     setSubmitting(false);
     setTitle('');
     setDescription('');
     setDate('');
     setType('story');
+    setRelatedMemberId('');
     setMediaFile(null);
     setErrors({});
     setChronicleFormOpen(false);
@@ -77,6 +87,20 @@ export default function ChronicleForm() {
                 placeholder="请输入标题"
               />
               {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-brown-600 mb-1">关联成员</label>
+              <select
+                value={relatedMemberId}
+                onChange={(e) => setRelatedMemberId(e.target.value)}
+                className="w-full px-3 py-2 border border-brown-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent bg-brown-50/50"
+              >
+                <option value="">选择关联成员（可选）</option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
             </div>
 
             <div>

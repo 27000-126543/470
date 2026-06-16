@@ -1,15 +1,32 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { X } from 'lucide-react';
 import useFamilyStore from '@/store/useFamilyStore';
 
 export default function ActivityForm() {
-  const { isActivityFormOpen, setActivityFormOpen, addActivity } = useFamilyStore();
+  const { isActivityFormOpen, setActivityFormOpen, addActivity, updateActivity, editingActivity } = useFamilyStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const isEdit = !!editingActivity;
+
+  useEffect(() => {
+    if (editingActivity) {
+      setTitle(editingActivity.title || '');
+      setDescription(editingActivity.description || '');
+      setDate(editingActivity.date || '');
+      setLocation(editingActivity.location || '');
+    } else {
+      setTitle('');
+      setDescription('');
+      setDate('');
+      setLocation('');
+    }
+    setErrors({});
+  }, [editingActivity, isActivityFormOpen]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -24,7 +41,11 @@ export default function ActivityForm() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    await addActivity({ title: title.trim(), description, date, location, status: 'upcoming', participants: [], createdBy: 'admin' });
+    if (isEdit && editingActivity) {
+      await updateActivity(editingActivity.id, { title: title.trim(), description, date, location });
+    } else {
+      await addActivity({ title: title.trim(), description, date, location, status: 'upcoming', participants: [], createdBy: 'admin' });
+    }
     setSubmitting(false);
     setTitle('');
     setDescription('');
@@ -42,7 +63,7 @@ export default function ActivityForm() {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between px-6 py-4 border-b border-brown-100">
-            <h2 className="font-serif text-lg font-bold text-brown-700">发布活动</h2>
+            <h2 className="font-serif text-lg font-bold text-brown-700">{isEdit ? '编辑活动' : '发布活动'}</h2>
             <button onClick={() => setActivityFormOpen(false)} className="p-1 hover:bg-brown-50 rounded-full transition-colors">
               <X size={20} className="text-brown-400" />
             </button>
@@ -108,7 +129,7 @@ export default function ActivityForm() {
               disabled={submitting}
               className="flex-1 px-4 py-2 bg-gold-400 text-white rounded-lg hover:bg-gold-500 active:translate-y-0.5 shadow-md hover:shadow-lg transition-all disabled:opacity-50"
             >
-              {submitting ? '发布中...' : '发布'}
+              {submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存' : '发布')}
             </button>
           </div>
         </div>

@@ -20,6 +20,16 @@ export interface ActivityParticipant {
   familyCount: number;
   remark: string;
   phone: string;
+  groupName?: string;
+}
+
+export interface ActivityTodo {
+  id: string;
+  title: string;
+  assignee?: string;
+  dueDate?: string;
+  completed: boolean;
+  createdAt: string;
 }
 
 export interface FamilyActivity {
@@ -32,6 +42,7 @@ export interface FamilyActivity {
   participants: ActivityParticipant[];
   status: 'upcoming' | 'ongoing' | 'ended';
   createdAt: string;
+  todos?: ActivityTodo[];
 }
 
 export interface ChronicleEntry {
@@ -43,6 +54,7 @@ export interface ChronicleEntry {
   mediaUrl?: string | null;
   createdBy: string;
   createdAt: string;
+  relatedMemberId?: string;
 }
 
 export interface BirthdayReminder {
@@ -83,6 +95,7 @@ interface FamilyState {
   isActivityFormOpen: boolean;
   isChronicleFormOpen: boolean;
   editingMember: FamilyMember | null;
+  editingActivity: FamilyActivity | null;
 
   fetchMembers: () => Promise<void>;
   addMember: (data: Partial<FamilyMember>) => Promise<string | null>;
@@ -90,8 +103,12 @@ interface FamilyState {
   deleteMember: (id: string) => Promise<void>;
   fetchActivities: () => Promise<void>;
   addActivity: (data: Partial<FamilyActivity>) => Promise<void>;
-  joinActivity: (id: string, memberId: string, data?: { bringFamily?: boolean; familyCount?: number; remark?: string; phone?: string }) => Promise<void>;
+  updateActivity: (id: string, data: Partial<FamilyActivity>) => Promise<void>;
+  joinActivity: (id: string, memberId: string, data?: { bringFamily?: boolean; familyCount?: number; remark?: string; phone?: string; groupName?: string }) => Promise<void>;
   leaveActivity: (id: string, memberId: string) => Promise<void>;
+  addActivityTodo: (activityId: string, todo: Partial<ActivityTodo>) => Promise<void>;
+  updateActivityTodo: (activityId: string, todoId: string, todo: Partial<ActivityTodo>) => Promise<void>;
+  deleteActivityTodo: (activityId: string, todoId: string) => Promise<void>;
   fetchChronicle: () => Promise<void>;
   addChronicleEntry: (data: Partial<ChronicleEntry>) => Promise<void>;
   deleteChronicleEntry: (id: string) => Promise<void>;
@@ -101,7 +118,7 @@ interface FamilyState {
   fetchFamilyTrees: () => Promise<void>;
   setSelectedMember: (member: FamilyMember | null) => void;
   setMemberFormOpen: (open: boolean, member?: FamilyMember | null) => void;
-  setActivityFormOpen: (open: boolean) => void;
+  setActivityFormOpen: (open: boolean, activity?: FamilyActivity | null) => void;
   setChronicleFormOpen: (open: boolean) => void;
 }
 
@@ -117,6 +134,7 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
   isActivityFormOpen: false,
   isChronicleFormOpen: false,
   editingMember: null,
+  editingActivity: null,
 
   fetchMembers: async () => {
     try {
@@ -207,6 +225,20 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
     }
   },
 
+  updateActivity: async (id, data) => {
+    try {
+      await fetch(`/api/activities/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      await get().fetchActivities();
+      await get().fetchActivityReminders();
+    } catch {
+      console.error('Failed to update activity');
+    }
+  },
+
   joinActivity: async (id, memberId, data) => {
     try {
       await fetch(`/api/activities/${id}/join`, {
@@ -232,6 +264,46 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
       await get().fetchActivityReminders();
     } catch {
       console.error('Failed to leave activity');
+    }
+  },
+
+  addActivityTodo: async (activityId, todo) => {
+    try {
+      await fetch(`/api/activities/${activityId}/todos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(todo),
+      });
+      await get().fetchActivities();
+      await get().fetchActivityReminders();
+    } catch {
+      console.error('Failed to add activity todo');
+    }
+  },
+
+  updateActivityTodo: async (activityId, todoId, todo) => {
+    try {
+      await fetch(`/api/activities/${activityId}/todos/${todoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(todo),
+      });
+      await get().fetchActivities();
+      await get().fetchActivityReminders();
+    } catch {
+      console.error('Failed to update activity todo');
+    }
+  },
+
+  deleteActivityTodo: async (activityId, todoId) => {
+    try {
+      await fetch(`/api/activities/${activityId}/todos/${todoId}`, {
+        method: 'DELETE',
+      });
+      await get().fetchActivities();
+      await get().fetchActivityReminders();
+    } catch {
+      console.error('Failed to delete activity todo');
     }
   },
 
@@ -326,7 +398,10 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
     editingMember: open ? (member ?? null) : null,
   }),
 
-  setActivityFormOpen: (open) => set({ isActivityFormOpen: open }),
+  setActivityFormOpen: (open, activity) => set({
+    isActivityFormOpen: open,
+    editingActivity: open ? (activity ?? null) : null,
+  }),
 
   setChronicleFormOpen: (open) => set({ isChronicleFormOpen: open }),
 }));
