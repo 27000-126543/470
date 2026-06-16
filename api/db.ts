@@ -16,6 +16,7 @@ const DEFAULT_DATA = {
   activities: [],
   chronicleEntries: [],
   birthdayReminders: [],
+  lastBirthdayScanDate: null,
 }
 
 function ensureDataDir() {

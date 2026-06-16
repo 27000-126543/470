@@ -14,6 +14,14 @@ export interface FamilyMember {
   updatedAt?: string;
 }
 
+export interface ActivityParticipant {
+  memberId: string;
+  bringFamily: boolean;
+  familyCount: number;
+  remark: string;
+  phone: string;
+}
+
 export interface FamilyActivity {
   id: string;
   title: string;
@@ -21,7 +29,7 @@ export interface FamilyActivity {
   date: string;
   location: string;
   createdBy: string;
-  participants: string[];
+  participants: ActivityParticipant[];
   status: 'upcoming' | 'ongoing' | 'ended';
   createdAt: string;
 }
@@ -55,9 +63,11 @@ export interface ActivityReminder {
   date: string;
   location: string;
   participantCount: number;
-  participants: string[];
+  totalCount: number;
+  participants: ActivityParticipant[];
   daysUntil: number;
   urgency: 'today' | 'tomorrow' | 'soon';
+  countdownText: string;
   reminderType: 'activity';
 }
 
@@ -67,6 +77,7 @@ interface FamilyState {
   chronicleEntries: ChronicleEntry[];
   birthdayReminders: BirthdayReminder[];
   activityReminders: ActivityReminder[];
+  familyTrees: { id: string; name: string; description: string; createdAt: string }[];
   selectedMember: FamilyMember | null;
   isMemberFormOpen: boolean;
   isActivityFormOpen: boolean;
@@ -79,7 +90,7 @@ interface FamilyState {
   deleteMember: (id: string) => Promise<void>;
   fetchActivities: () => Promise<void>;
   addActivity: (data: Partial<FamilyActivity>) => Promise<void>;
-  joinActivity: (id: string, memberId: string) => Promise<void>;
+  joinActivity: (id: string, memberId: string, data?: { bringFamily?: boolean; familyCount?: number; remark?: string; phone?: string }) => Promise<void>;
   leaveActivity: (id: string, memberId: string) => Promise<void>;
   fetchChronicle: () => Promise<void>;
   addChronicleEntry: (data: Partial<ChronicleEntry>) => Promise<void>;
@@ -87,6 +98,7 @@ interface FamilyState {
   fetchBirthdayReminders: () => Promise<void>;
   scanBirthdayReminders: () => Promise<void>;
   fetchActivityReminders: () => Promise<void>;
+  fetchFamilyTrees: () => Promise<void>;
   setSelectedMember: (member: FamilyMember | null) => void;
   setMemberFormOpen: (open: boolean, member?: FamilyMember | null) => void;
   setActivityFormOpen: (open: boolean) => void;
@@ -99,6 +111,7 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
   chronicleEntries: [],
   birthdayReminders: [],
   activityReminders: [],
+  familyTrees: [],
   selectedMember: null,
   isMemberFormOpen: false,
   isActivityFormOpen: false,
@@ -110,7 +123,10 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
       const res = await fetch('/api/members');
       const data = await res.json();
       if (data.success !== false) {
-        set({ members: Array.isArray(data) ? data : data.data || [] });
+        set({ 
+          members: Array.isArray(data) ? data : data.data || [],
+          familyTrees: data.familyTrees || [{ id: 'default', name: '我的家族', description: '默认家族家谱', createdAt: '2024-01-01' }],
+        });
       }
     } catch {
       console.error('Failed to fetch members');
@@ -191,12 +207,12 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
     }
   },
 
-  joinActivity: async (id, memberId) => {
+  joinActivity: async (id, memberId, data) => {
     try {
       await fetch(`/api/activities/${id}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId }),
+        body: JSON.stringify({ memberId, ...data }),
       });
       await get().fetchActivities();
       await get().fetchActivityReminders();
@@ -286,6 +302,20 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
       }
     } catch {
       console.error('Failed to fetch activity reminders');
+    }
+  },
+
+  fetchFamilyTrees: async () => {
+    try {
+      const res = await fetch('/api/members');
+      const data = await res.json();
+      if (data.success !== false && data.familyTrees) {
+        set({ familyTrees: data.familyTrees });
+      } else {
+        set({ familyTrees: [{ id: 'default', name: '我的家族', description: '默认家族家谱', createdAt: '2024-01-01' }] });
+      }
+    } catch {
+      set({ familyTrees: [{ id: 'default', name: '我的家族', description: '默认家族家谱', createdAt: '2024-01-01' }] });
     }
   },
 

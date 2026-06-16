@@ -2,6 +2,8 @@ import { Router, type Request, type Response } from 'express'
 import { v4 } from 'uuid'
 import { readDB, writeDB } from '../db.js'
 
+const router = Router()
+
 const normalizeParticipants = (participants: any[]): any[] => {
   return participants.map((p) => {
     if (typeof p === 'string') {
@@ -128,9 +130,15 @@ router.delete('/:id/join', async (req: Request, res: Response): Promise<void> =>
       return
     }
 
-    activity.participants = activity.participants.filter((p: string) => p !== memberId)
+    activity.participants = normalizeParticipants(activity.participants || [])
+    activity.participants = activity.participants.filter((p: any) => p.memberId !== memberId)
     writeDB(db)
-    res.json({ success: true, data: activity })
+
+    const updatedActivity = {
+      ...activity,
+      participants: normalizeParticipants(activity.participants),
+    }
+    res.json({ success: true, data: updatedActivity })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to leave activity' })
   }

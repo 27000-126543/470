@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, GitBranch, Calendar, UserPlus, Plus, Camera, BookOpen, Bell, Clock, MapPin, AlertCircle } from 'lucide-react';
-import useFamilyStore from '@/store/useFamilyStore';
+import useFamilyStore, { type ActivityParticipant } from '@/store/useFamilyStore';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -13,6 +13,10 @@ export default function Dashboard() {
     fetchBirthdayReminders();
     fetchActivityReminders();
   }, [fetchMembers, fetchActivities, fetchBirthdayReminders, fetchActivityReminders]);
+
+  const getTotalParticipants = (participants: ActivityParticipant[]): number => {
+    return participants.reduce((total, p) => total + 1 + (p.familyCount || 0), 0);
+  };
 
   const generations = new Set(members.map((m) => m.relationType)).size;
 
@@ -97,7 +101,7 @@ export default function Dashboard() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Users size={13} className="text-brown-300" />
-                      {reminder.participantCount}人报名
+                      {reminder.participantCount}人报名（含家属共{reminder.totalCount}人）
                     </span>
                   </div>
                 </div>
@@ -125,7 +129,7 @@ export default function Dashboard() {
                     </div>
                     <p className="text-xs text-brown-400">{activity.date} · {activity.location}</p>
                   </div>
-                  <span className="text-xs text-brown-300 whitespace-nowrap">{activity.participants.length}人参与</span>
+                  <span className="text-xs text-brown-300 whitespace-nowrap">{activity.participants.length}人（含家属共{getTotalParticipants(activity.participants)}人）</span>
                 </div>
               ))}
             </div>

@@ -28,7 +28,7 @@ function validateMember(body: any): string | null {
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const db = readDB()
-    res.json({ success: true, data: db.members })
+    res.json({ success: true, data: db.members, familyTrees: db.familyTrees })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to get members' })
   }
