@@ -21,6 +21,7 @@ function validateMember(body: any): string | null {
   if (!['male', 'female'].includes(body.gender)) return '性别必须为男或女'
   if (!body.relationType) return '关系类型不能为空'
   if (!['parent', 'child', 'spouse', 'sibling'].includes(body.relationType)) return '关系类型必须为父母/子女/配偶/兄弟姐妹'
+  if (['child', 'spouse', 'sibling'].includes(body.relationType) && !body.relatedToId) return '选择子女、配偶或兄弟姐妹关系时，必须选择关联成员'
   return null
 }
 

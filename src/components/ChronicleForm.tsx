@@ -22,6 +22,7 @@ export default function ChronicleForm() {
     const newErrors: Record<string, string> = {};
     if (!title.trim()) newErrors.title = '标题不能为空';
     if (!date) newErrors.date = '日期不能为空';
+    if (type === 'photo' && !mediaFile) newErrors.mediaFile = '照片类型必须上传图片';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -115,13 +116,17 @@ export default function ChronicleForm() {
 
             {type === 'photo' && (
               <div>
-                <label className="block text-sm font-medium text-brown-600 mb-1">照片上传</label>
+                <label className="block text-sm font-medium text-brown-600 mb-1">照片上传 <span className="text-red-400">*</span></label>
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setMediaFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    setMediaFile(e.target.files?.[0] || null);
+                    if (errors.mediaFile) setErrors((prev) => ({ ...prev, mediaFile: '' }));
+                  }}
                   className="w-full text-sm text-brown-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gold-400/10 file:text-gold-500 hover:file:bg-gold-400/20 file:cursor-pointer file:transition-colors"
                 />
+                {errors.mediaFile && <p className="text-red-400 text-xs mt-1">{errors.mediaFile}</p>}
               </div>
             )}
           </form>

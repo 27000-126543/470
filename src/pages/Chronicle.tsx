@@ -43,12 +43,26 @@ export default function Chronicle() {
 
   const handleExportPDF = useCallback(async () => {
     if (!timelineRef.current) return;
+
+    const images = timelineRef.current.querySelectorAll('img');
+    const imagePromises = Array.from(images).map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+    });
+    await Promise.all(imagePromises);
+
     const html2canvas = (await import('html2canvas')).default;
     const jsPDF = (await import('jspdf')).default;
 
     const canvas = await html2canvas(timelineRef.current, {
       backgroundColor: '#F5F0EB',
       scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
     });
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -130,7 +144,17 @@ export default function Chronicle() {
                       }`}
                     >
                       <div className={`w-5/12 ${isLeft ? 'pr-8 text-right' : 'pl-8'}`}>
-                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-brown-100 hover:shadow-md transition-shadow">
+                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-brown-100 hover:shadow-md transition-shadow overflow-hidden">
+                          {entry.type === 'photo' && entry.mediaUrl && (
+                            <div className="mb-3 rounded-lg overflow-hidden">
+                              <img
+                                src={entry.mediaUrl}
+                                alt={entry.title}
+                                className="w-full h-40 object-cover rounded-lg"
+                                crossOrigin="anonymous"
+                              />
+                            </div>
+                          )}
                           <div className={`flex items-center gap-2 mb-2 ${isLeft ? 'justify-end' : ''}`}>
                             <span className="text-lg">{typeInfo.icon}</span>
                             <h3 className="font-serif font-bold text-brown-700 text-sm">{entry.title}</h3>

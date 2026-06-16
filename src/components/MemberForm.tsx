@@ -13,6 +13,7 @@ interface FormErrors {
   name?: string;
   birthDate?: string;
   deathDate?: string;
+  relatedToId?: string;
 }
 
 export default function MemberForm() {
@@ -35,6 +36,8 @@ export default function MemberForm() {
     return !isNaN(date.getTime());
   };
 
+  const requiresRelatedTo = relationType === 'child' || relationType === 'spouse' || relationType === 'sibling';
+
   const validate = (field?: keyof FormErrors) => {
     const newErrors: FormErrors = { ...errors };
     if (!field || field === 'name') {
@@ -50,8 +53,15 @@ export default function MemberForm() {
       else if (deathDate && birthDate && new Date(deathDate) <= new Date(birthDate)) newErrors.deathDate = '逝世日期必须晚于出生日期';
       else newErrors.deathDate = undefined;
     }
+    if (!field || field === 'relatedToId') {
+      if (requiresRelatedTo && !relatedToId) {
+        newErrors.relatedToId = `选择${relationOptions.find(r => r.value === relationType)?.label || '此'}关系时，必须选择关联成员`;
+      } else {
+        newErrors.relatedToId = undefined;
+      }
+    }
     setErrors(newErrors);
-    return !newErrors.name && !newErrors.birthDate && !newErrors.deathDate;
+    return !newErrors.name && !newErrors.birthDate && !newErrors.deathDate && !newErrors.relatedToId;
   };
 
   const handleBlur = (field: keyof FormErrors) => validate(field);
@@ -156,7 +166,13 @@ export default function MemberForm() {
             <label className="block text-sm font-medium text-brown-600 mb-1">关系类型</label>
             <select
               value={relationType}
-              onChange={(e) => setRelationType(e.target.value as 'parent' | 'child' | 'spouse' | 'sibling')}
+              onChange={(e) => {
+                setRelationType(e.target.value as 'parent' | 'child' | 'spouse' | 'sibling');
+                if (e.target.value === 'parent') {
+                  setRelatedToId('');
+                  setErrors((prev) => ({ ...prev, relatedToId: undefined }));
+                }
+              }}
               className="w-full px-3 py-2 border border-brown-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent bg-brown-50/50"
             >
               {relationOptions.map((opt) => (
@@ -166,19 +182,26 @@ export default function MemberForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-brown-600 mb-1">关联成员</label>
+            <label className="block text-sm font-medium text-brown-600 mb-1">
+              关联成员 {requiresRelatedTo && <span className="text-red-400">*</span>}
+            </label>
             <select
               value={relatedToId}
-              onChange={(e) => setRelatedToId(e.target.value)}
-              className="w-full px-3 py-2 border border-brown-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent bg-brown-50/50"
+              onChange={(e) => {
+                setRelatedToId(e.target.value);
+                if (errors.relatedToId) setErrors((prev) => ({ ...prev, relatedToId: undefined }));
+              }}
+              onBlur={() => handleBlur('relatedToId')}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent bg-brown-50/50 ${errors.relatedToId ? 'border-red-300' : 'border-brown-200'}`}
             >
-              <option value="">无</option>
+              <option value="">请选择关联成员</option>
               {members
                 .filter((m) => m.id !== editingMember?.id)
                 .map((m) => (
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
             </select>
+            {errors.relatedToId && <p className="text-red-400 text-xs mt-1">{errors.relatedToId}</p>}
           </div>
         </form>
 

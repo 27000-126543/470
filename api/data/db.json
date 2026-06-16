@@ -140,6 +140,19 @@
       ],
       "status": "ended",
       "createdAt": "2024-01-01"
+    },
+    {
+      "id": "f6e798d5-9677-4948-921f-92e94aee9040",
+      "title": "周末烧烤聚会",
+      "description": "全家一起烧烤联欢",
+      "date": "2026-06-17",
+      "location": "后院花园",
+      "createdBy": "admin",
+      "participants": [
+        "m2"
+      ],
+      "status": "upcoming",
+      "createdAt": "2026-06-16"
     }
   ],
   "chronicleEntries": [
@@ -172,6 +185,25 @@
       "mediaUrl": null,
       "createdBy": "m3",
       "createdAt": "2024-01-01"
+    }
+  ],
+  "birthdayReminders": [
+    {
+      "memberId": "m7",
+      "memberName": "王思琪",
+      "birthDate": "2001-06-20",
+      "nextBirthday": "2026-06-20",
+      "daysUntil": 4,
+      "age": 25,
+      "giftSuggestions": [
+        "精选茶叶礼盒",
+        "健康保健品",
+        "定制相册",
+        "鲜花束",
+        "购物卡",
+        "书籍"
+      ],
+      "scanDate": "2026-06-16"
     }
   ]
 }

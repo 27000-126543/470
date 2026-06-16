@@ -1,17 +1,18 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GitBranch, Calendar, UserPlus, Plus, Camera, BookOpen } from 'lucide-react';
+import { Users, GitBranch, Calendar, UserPlus, Plus, Camera, BookOpen, Bell, Clock, MapPin, AlertCircle } from 'lucide-react';
 import useFamilyStore from '@/store/useFamilyStore';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { members, activities, birthdayReminders, fetchMembers, fetchActivities, fetchBirthdayReminders, setMemberFormOpen, setActivityFormOpen, setChronicleFormOpen } = useFamilyStore();
+  const { members, activities, birthdayReminders, activityReminders, fetchMembers, fetchActivities, fetchBirthdayReminders, fetchActivityReminders, setMemberFormOpen, setActivityFormOpen, setChronicleFormOpen } = useFamilyStore();
 
   useEffect(() => {
     fetchMembers();
     fetchActivities();
     fetchBirthdayReminders();
-  }, [fetchMembers, fetchActivities, fetchBirthdayReminders]);
+    fetchActivityReminders();
+  }, [fetchMembers, fetchActivities, fetchBirthdayReminders, fetchActivityReminders]);
 
   const generations = new Set(members.map((m) => m.relationType)).size;
 
@@ -23,6 +24,12 @@ export default function Dashboard() {
     upcoming: { text: '即将开始', cls: 'bg-green-100 text-green-700' },
     ongoing: { text: '进行中', cls: 'bg-orange-100 text-orange-700' },
     ended: { text: '已结束', cls: 'bg-brown-100 text-brown-400' },
+  };
+
+  const urgencyConfig: Record<string, { text: string; cls: string; bgCls: string }> = {
+    today: { text: '今天', cls: 'text-red-600', bgCls: 'bg-red-50 border-red-200' },
+    tomorrow: { text: '明天', cls: 'text-orange-600', bgCls: 'bg-orange-50 border-orange-200' },
+    soon: { text: '即将到来', cls: 'text-gold-500', bgCls: 'bg-gold-400/5 border-gold-300/30' },
   };
 
   return (
@@ -59,6 +66,47 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {activityReminders.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-brown-100 animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
+          <h3 className="font-serif text-lg font-bold text-brown-700 mb-4 flex items-center gap-2">
+            <Bell size={18} className="text-gold-500" />
+            活动提醒
+          </h3>
+          <div className="space-y-3">
+            {activityReminders.map((reminder) => {
+              const urgency = urgencyConfig[reminder.urgency] || urgencyConfig.soon;
+              return (
+                <div key={reminder.activityId} className={`rounded-xl p-4 border ${urgency.bgCls}`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle size={16} className={urgency.cls} />
+                      <span className="font-medium text-brown-700">{reminder.title}</span>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${urgency.cls} ${reminder.urgency === 'today' ? 'bg-red-100' : reminder.urgency === 'tomorrow' ? 'bg-orange-100' : 'bg-gold-400/10'}`}>
+                      {urgency.text}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-brown-500">
+                    <span className="flex items-center gap-1">
+                      <Clock size={13} className="text-brown-300" />
+                      {reminder.date}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MapPin size={13} className="text-brown-300" />
+                      {reminder.location}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users size={13} className="text-brown-300" />
+                      {reminder.participantCount}人报名
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-brown-100 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <h3 className="font-serif text-lg font-bold text-brown-700 mb-4">近期活动</h3>
@@ -94,10 +142,13 @@ export default function Dashboard() {
                 <div key={reminder.memberId} className="p-3 rounded-xl bg-brown-50/50">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-brown-700 text-sm">{reminder.memberName}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${reminder.daysUntil <= 7 ? 'bg-red-100 text-red-600' : 'bg-gold-400/10 text-gold-500'}`}>
-                      {reminder.daysUntil === 0 ? '今天' : `${reminder.daysUntil}天后`}
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${reminder.daysUntil <= 1 ? 'bg-red-100 text-red-600' : reminder.daysUntil <= 7 ? 'bg-orange-100 text-orange-600' : 'bg-gold-400/10 text-gold-500'}`}>
+                      {reminder.daysUntil === 0 ? '今天' : reminder.daysUntil === 1 ? '明天' : `${reminder.daysUntil}天后`}
                     </span>
                   </div>
+                  {reminder.age && (
+                    <p className="text-xs text-brown-400 mb-1.5">即将{reminder.age}岁</p>
+                  )}
                   <div className="flex flex-wrap gap-1">
                     {reminder.giftSuggestions.map((gift, i) => (
                       <span key={i} className="text-xs px-2 py-0.5 bg-white rounded-full text-brown-500 border border-brown-100">

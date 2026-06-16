@@ -15,6 +15,7 @@ const DEFAULT_DATA = {
   members: [],
   activities: [],
   chronicleEntries: [],
+  birthdayReminders: [],
 }
 
 function ensureDataDir() {

@@ -41,8 +41,24 @@ export interface BirthdayReminder {
   memberId: string;
   memberName: string;
   birthDate: string;
+  nextBirthday?: string;
   daysUntil: number;
+  age?: number;
   giftSuggestions: string[];
+  scanDate?: string;
+}
+
+export interface ActivityReminder {
+  activityId: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  participantCount: number;
+  participants: string[];
+  daysUntil: number;
+  urgency: 'today' | 'tomorrow' | 'soon';
+  reminderType: 'activity';
 }
 
 interface FamilyState {
@@ -50,6 +66,7 @@ interface FamilyState {
   activities: FamilyActivity[];
   chronicleEntries: ChronicleEntry[];
   birthdayReminders: BirthdayReminder[];
+  activityReminders: ActivityReminder[];
   selectedMember: FamilyMember | null;
   isMemberFormOpen: boolean;
   isActivityFormOpen: boolean;
@@ -68,6 +85,8 @@ interface FamilyState {
   addChronicleEntry: (data: Partial<ChronicleEntry>) => Promise<void>;
   deleteChronicleEntry: (id: string) => Promise<void>;
   fetchBirthdayReminders: () => Promise<void>;
+  scanBirthdayReminders: () => Promise<void>;
+  fetchActivityReminders: () => Promise<void>;
   setSelectedMember: (member: FamilyMember | null) => void;
   setMemberFormOpen: (open: boolean, member?: FamilyMember | null) => void;
   setActivityFormOpen: (open: boolean) => void;
@@ -79,6 +98,7 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
   activities: [],
   chronicleEntries: [],
   birthdayReminders: [],
+  activityReminders: [],
   selectedMember: null,
   isMemberFormOpen: false,
   isActivityFormOpen: false,
@@ -165,6 +185,7 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
         body: JSON.stringify(data),
       });
       await get().fetchActivities();
+      await get().fetchActivityReminders();
     } catch {
       console.error('Failed to add activity');
     }
@@ -178,6 +199,7 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
         body: JSON.stringify({ memberId }),
       });
       await get().fetchActivities();
+      await get().fetchActivityReminders();
     } catch {
       console.error('Failed to join activity');
     }
@@ -191,6 +213,7 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
         body: JSON.stringify({ memberId }),
       });
       await get().fetchActivities();
+      await get().fetchActivityReminders();
     } catch {
       console.error('Failed to leave activity');
     }
@@ -239,6 +262,30 @@ const useFamilyStore = create<FamilyState>((set, get) => ({
       }
     } catch {
       console.error('Failed to fetch birthday reminders');
+    }
+  },
+
+  scanBirthdayReminders: async () => {
+    try {
+      const res = await fetch('/api/reminders/birthdays/scan', { method: 'POST' });
+      const data = await res.json();
+      if (data.success !== false) {
+        set({ birthdayReminders: Array.isArray(data) ? data : data.data || [] });
+      }
+    } catch {
+      console.error('Failed to scan birthday reminders');
+    }
+  },
+
+  fetchActivityReminders: async () => {
+    try {
+      const res = await fetch('/api/reminders/activities');
+      const data = await res.json();
+      if (data.success !== false) {
+        set({ activityReminders: Array.isArray(data) ? data : data.data || [] });
+      }
+    } catch {
+      console.error('Failed to fetch activity reminders');
     }
   },
 

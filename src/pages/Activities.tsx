@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, MapPin, Calendar, Users } from 'lucide-react';
+import { Plus, MapPin, Calendar, Users, X } from 'lucide-react';
 import useFamilyStore from '@/store/useFamilyStore';
 import ActivityForm from '@/components/ActivityForm';
 
@@ -20,6 +20,7 @@ const tabs: { key: FilterTab; label: string }[] = [
 export default function Activities() {
   const { activities, members, fetchActivities, fetchMembers, setActivityFormOpen, joinActivity, leaveActivity } = useFamilyStore();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [joiningActivityId, setJoiningActivityId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchActivities();
@@ -32,7 +33,11 @@ export default function Activities() {
     return a.status === 'ended';
   });
 
-  const currentMemberId = members[0]?.id;
+  const handleJoin = async (activityId: string, memberId: string) => {
+    await joinActivity(activityId, memberId);
+  };
+
+  const getMemberName = (id: string) => members.find((m) => m.id === id)?.name || id;
 
   return (
     <div className="space-y-6">
@@ -70,7 +75,6 @@ export default function Activities() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredActivities.map((activity, index) => {
-            const isJoined = currentMemberId && activity.participants.includes(currentMemberId);
             const status = statusConfig[activity.status] || statusConfig.ended;
 
             return (
@@ -107,28 +111,89 @@ export default function Activities() {
                     <span>{activity.participants.length}人参与</span>
                   </div>
 
-                  {activity.status !== 'ended' && currentMemberId && (
-                    isJoined ? (
-                      <button
-                        onClick={() => leaveActivity(activity.id, currentMemberId)}
-                        className="px-3 py-1.5 text-xs border border-brown-200 text-brown-400 rounded-lg hover:bg-brown-50 transition-colors"
-                      >
-                        退出
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => joinActivity(activity.id, currentMemberId)}
-                        className="px-3 py-1.5 text-xs bg-gold-400 text-white rounded-lg hover:bg-gold-500 active:translate-y-0.5 transition-all shadow-sm"
-                      >
-                        参加
-                      </button>
-                    )
+                  {activity.status !== 'ended' && (
+                    <button
+                      onClick={() => setJoiningActivityId(activity.id)}
+                      className="px-3 py-1.5 text-xs bg-gold-400 text-white rounded-lg hover:bg-gold-500 active:translate-y-0.5 transition-all shadow-sm"
+                    >
+                      报名
+                    </button>
                   )}
                 </div>
+
+                {activity.participants.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-brown-50">
+                    <p className="text-xs text-brown-300 mb-1.5">已报名成员：</p>
+                    <div className="flex flex-wrap gap-1">
+                      {activity.participants.map((pid) => (
+                        <span key={pid} className="text-xs px-2 py-0.5 bg-brown-50 rounded-full text-brown-600 border border-brown-100">
+                          {getMemberName(pid)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
+      )}
+
+      {joiningActivityId && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setJoiningActivityId(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-brown-100">
+                <h2 className="font-serif text-lg font-bold text-brown-700">选择报名成员</h2>
+                <button onClick={() => setJoiningActivityId(null)} className="p-1 hover:bg-brown-50 rounded-full transition-colors">
+                  <X size={20} className="text-brown-400" />
+                </button>
+              </div>
+              <div className="px-6 py-3 max-h-64 overflow-y-auto">
+                {members
+                  .filter((m) => !m.deathDate)
+                  .map((member) => {
+                    const activity = activities.find((a) => a.id === joiningActivityId);
+                    const alreadyJoined = activity?.participants.includes(member.id) || false;
+                    return (
+                      <div key={member.id} className="flex items-center justify-between py-2 border-b border-brown-50 last:border-0">
+                        <span className="text-sm text-brown-700">{member.name}</span>
+                        {alreadyJoined ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-green-600">已报名</span>
+                            <button
+                              onClick={async () => {
+                                await leaveActivity(joiningActivityId, member.id);
+                              }}
+                              className="text-xs px-2 py-1 border border-brown-200 text-brown-400 rounded hover:bg-brown-50 transition-colors"
+                            >
+                              退出
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleJoin(joiningActivityId, member.id)}
+                            className="text-xs px-3 py-1 bg-gold-400 text-white rounded-lg hover:bg-gold-500 transition-colors"
+                          >
+                            报名
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+              <div className="px-6 py-3 border-t border-brown-100">
+                <button
+                  onClick={() => setJoiningActivityId(null)}
+                  className="w-full px-4 py-2 border border-brown-200 text-brown-600 rounded-lg hover:bg-brown-50 transition-colors text-sm"
+                >
+                  关闭
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       <ActivityForm />
