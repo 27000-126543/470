@@ -1,0 +1,177 @@
+{
+  "familyTrees": [
+    {
+      "id": "default",
+      "name": "我的家族",
+      "description": "默认家族家谱",
+      "createdAt": "2024-01-01"
+    }
+  ],
+  "members": [
+    {
+      "id": "m1",
+      "name": "王德明",
+      "birthDate": "1945-03-15",
+      "deathDate": "2020-08-20",
+      "gender": "male",
+      "relationType": "parent",
+      "relatedToId": null,
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "m2",
+      "name": "李秀兰",
+      "birthDate": "1948-07-22",
+      "deathDate": null,
+      "gender": "female",
+      "relationType": "spouse",
+      "relatedToId": "m1",
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "m3",
+      "name": "王建国",
+      "birthDate": "1970-05-10",
+      "deathDate": null,
+      "gender": "male",
+      "relationType": "child",
+      "relatedToId": "m1",
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "m4",
+      "name": "王建华",
+      "birthDate": "1973-11-03",
+      "deathDate": null,
+      "gender": "female",
+      "relationType": "child",
+      "relatedToId": "m1",
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "m5",
+      "name": "张美玲",
+      "birthDate": "1972-09-18",
+      "deathDate": null,
+      "gender": "female",
+      "relationType": "spouse",
+      "relatedToId": "m3",
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "m6",
+      "name": "王浩然",
+      "birthDate": "1998-02-14",
+      "deathDate": null,
+      "gender": "male",
+      "relationType": "child",
+      "relatedToId": "m3",
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "m7",
+      "name": "王思琪",
+      "birthDate": "2001-06-20",
+      "deathDate": null,
+      "gender": "female",
+      "relationType": "child",
+      "relatedToId": "m3",
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "4d58f5c6-d7d9-494e-b4f3-6a30b9331545",
+      "name": "王小宝",
+      "birthDate": "1995-01-01",
+      "deathDate": null,
+      "gender": "male",
+      "relationType": "child",
+      "relatedToId": "m3",
+      "familyTreeId": "default",
+      "avatar": null,
+      "createdAt": "2026-06-16"
+    }
+  ],
+  "activities": [
+    {
+      "id": "a1",
+      "title": "新春团拜会",
+      "description": "全家齐聚，共贺新春",
+      "date": "2026-06-22",
+      "location": "老家大宅",
+      "createdBy": "m3",
+      "participants": [
+        "m2",
+        "m3",
+        "m5",
+        "m6"
+      ],
+      "status": "upcoming",
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "a2",
+      "title": "家族清明祭祖",
+      "description": "清明时节，缅怀先祖",
+      "date": "2026-04-05",
+      "location": "祖祠",
+      "createdBy": "m1",
+      "participants": [
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m6",
+        "m7"
+      ],
+      "status": "ended",
+      "createdAt": "2024-01-01"
+    }
+  ],
+  "chronicleEntries": [
+    {
+      "id": "c1",
+      "title": "家族合影",
+      "description": "春节全家福合影留念",
+      "date": "2025-01-29",
+      "type": "photo",
+      "mediaUrl": null,
+      "createdBy": "m3",
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "c2",
+      "title": "爷爷的故事",
+      "description": "王德明老人讲述家族迁徙史，从山东到东北的艰辛历程",
+      "date": "2023-08-15",
+      "type": "story",
+      "mediaUrl": null,
+      "createdBy": "m6",
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "c3",
+      "title": "思琪出生",
+      "description": "王思琪出生，家族添新丁",
+      "date": "2001-06-20",
+      "type": "event",
+      "mediaUrl": null,
+      "createdBy": "m3",
+      "createdAt": "2024-01-01"
+    }
+  ]
+}
